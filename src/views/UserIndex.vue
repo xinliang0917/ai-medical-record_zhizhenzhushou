@@ -28,6 +28,7 @@
         </el-aside>
         <el-main class="main-content">
           <router-view v-if="activeMenu === '/index/settings'"></router-view>
+          
           <div v-else>
             <h2 class="page-title">问诊记录列表</h2>
             <el-table :data="consultations" style="width: 100%" class="consultation-table">
@@ -59,15 +60,28 @@
             title="问诊详情"
             width="60%"
             class="consultation-dialog"
-            @closed="resetQuantifiedFormEdit" >
+            @closed="resetQuantifiedFormEdit"
+          >
             <div v-if="selectedConsultation">
               <h3>患者姓名：{{ selectedConsultation.patientName }}</h3>
               <p><strong>医生姓名：</strong>{{ selectedConsultation.doctorName }}</p>
               <p><strong>问诊日期：</strong>{{ selectedConsultation.date }}</p>
-              <h4>原始对话录音转写：</h4>
-              <p class="dialog-content">{{ selectedConsultation.originalTranscript }}</p>
-              <h4>结构化病历数据：</h4>
-              <pre class="dialog-content">{{ JSON.stringify(selectedConsultation.structuredData, null, 2) }}</pre>
+
+              <h4>
+                原始对话录音转写：
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  @click="toggleOriginalTranscript"
+                  style="margin-left: 10px;"
+                >
+                  {{ showOriginalTranscript ? '收起' : '展开' }}
+                </el-button>
+              </h4>
+              <p v-if="showOriginalTranscript" class="dialog-content">
+                {{ selectedConsultation.originalTranscript }}
+              </p>
 
               <h4>量化表内容：
                 <el-button
@@ -114,9 +128,9 @@
 </template>
 
 <script setup>
-import { ref, computed, watchEffect, nextTick } from 'vue'; // 导入 nextTick
+import { ref, computed, watchEffect, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus'; // 导入 ElMessageBox
+import { ElMessage, ElMessageBox } from 'element-plus';
 import { Tickets, Setting } from '@element-plus/icons-vue';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
@@ -257,6 +271,7 @@ watchEffect(() => {
 const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
+  localStorage.removeItem('password'); // 移除本地存储的密码
   ElMessage.success('已退出登录！');
   router.push('/');
 };
@@ -269,19 +284,25 @@ const selectedConsultation = ref(null);
 const isQuantifiedFormEditing = ref(false);
 const editableQuantifiedForm = ref({}); // 用于编辑的量化表副本
 
+// 控制原始对话录音转写显示/隐藏的状态
+const showOriginalTranscript = ref(false);
+
 const viewDetails = (row) => {
   selectedConsultation.value = row;
-  // 在打开对话框时，确保编辑状态是关闭的
   isQuantifiedFormEditing.value = false;
-  // 深度复制量化表数据到可编辑副本，避免直接修改原始数据
   editableQuantifiedForm.value = JSON.parse(JSON.stringify(row.quantifiedForm));
+  showOriginalTranscript.value = false; // 每次打开对话框时默认隐藏原始转写
   dialogVisible.value = true;
+};
+
+// 切换原始对话录音转写的显示状态
+const toggleOriginalTranscript = () => {
+  showOriginalTranscript.value = !showOriginalTranscript.value;
 };
 
 // 开始编辑量化表
 const startEditQuantifiedForm = () => {
   isQuantifiedFormEditing.value = true;
-  // 确保在编辑模式下，输入框内容是可编辑副本的值
   editableQuantifiedForm.value = JSON.parse(JSON.stringify(selectedConsultation.value.quantifiedForm));
   nextTick(() => {
     // 可以在这里做一些焦点设置等，如果需要
@@ -295,18 +316,15 @@ const saveQuantifiedForm = () => {
     cancelButtonText: '取消',
     type: 'warning',
   }).then(() => {
-    // 查找 mockConsultations 中对应的项并更新其 quantifiedForm
     const index = mockConsultations.value.findIndex(c => c.id === selectedConsultation.value.id);
     if (index !== -1) {
-      // 使用 Vue 的响应式更新方式，确保视图刷新
       mockConsultations.value[index].quantifiedForm = { ...editableQuantifiedForm.value };
-      // 同时更新当前选中的详情数据，确保对话框内显示的是最新数据
       selectedConsultation.value.quantifiedForm = { ...editableQuantifiedForm.value };
       ElMessage.success('量化表内容已保存！');
     } else {
       ElMessage.error('未能找到对应的问诊记录。');
     }
-    isQuantifiedFormEditing.value = false; // 关闭编辑状态
+    isQuantifiedFormEditing.value = false;
   }).catch(() => {
     ElMessage.info('已取消保存。');
   });
@@ -314,21 +332,19 @@ const saveQuantifiedForm = () => {
 
 // 取消编辑量化表
 const cancelEditQuantifiedForm = () => {
-  // 恢复到原始数据
   editableQuantifiedForm.value = JSON.parse(JSON.stringify(selectedConsultation.value.quantifiedForm));
-  isQuantifiedFormEditing.value = false; // 关闭编辑状态
+  isQuantifiedFormEditing.value = false;
   ElMessage.info('已取消修改。');
 };
 
 // 对话框关闭时重置编辑状态
 const resetQuantifiedFormEdit = () => {
   isQuantifiedFormEditing.value = false;
-  // 也可以在这里清空 editableQuantifiedForm，但通常在 viewDetails 时会重新赋值
+  showOriginalTranscript.value = false; // 关闭对话框时也重置原始转写显示状态
 };
 
 // 导出量化表 Excel
 const exportQuantifiedFormToExcel = (consultation) => {
-  // 此处 consultation 参数被正常使用，如果Linter仍警告，可忽略
   if (!consultation || !consultation.quantifiedForm) {
     ElMessage.warning('没有可导出的量化表数据。');
     return;
