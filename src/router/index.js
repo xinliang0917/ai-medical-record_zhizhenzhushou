@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/UserLogin.vue'
-import Index from '../views/UserIndex.vue' // 稍后创建的主页
+import Index from '../views/UserIndex.vue' 
 import UserSettings from '../views/UserSettings.vue'
 const routes = [
   {
@@ -24,24 +24,19 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(process.env.NODE_ENV === 'production' ? '/ai-medical-record_zhizhenzhushou/' : '/'), // 注意这里的 publicPath
   routes
-})
+});
 
-// 路由守卫：检查是否登录
+// 可选：添加路由守卫，实现未登录重定向
 router.beforeEach((to, from, next) => {
-  // 假设我们用 localStorage 存储一个简单的 token 来模拟登录状态
-  const isAuthenticated = localStorage.getItem('token');
-
-  if (to.meta.requiresAuth && !isAuthenticated) {
-    // 如果目标路由需要认证但用户未登录，则重定向到登录页
-    // 在实际项目中，登录成功后会将 token 存入 localStorage
-    // 这里为了演示，我们先放行 index 路由，或者你可以手动在浏览器控制台设置 localStorage.setItem('token', 'some_token');
-    console.log('需要登录才能访问此页面！');
-    // next('/'); // 暂时注释，方便测试，实际应该重定向到登录页
-    next(); // 暂时放行，以便调试主页
+  const token = localStorage.getItem('token');
+  if (to.path !== '/' && !token) { // 如果不是登录页且没有token
+    next('/'); // 重定向到登录页
+  } else if (to.path === '/' && token) { // 如果已登录且尝试访问登录页
+    next('/index'); // 重定向到主页
   } else {
-    next(); // 正常跳转
+    next(); // 正常放行
   }
 });
 
