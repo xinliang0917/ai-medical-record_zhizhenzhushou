@@ -54,82 +54,98 @@
               @current-change="handlePageChange"
             ></el-pagination>
           </div>
-
-          <el-dialog
-            v-model="dialogVisible"
-            title="问诊详情"
-            width="60%"
-            class="consultation-dialog"
-            @closed="resetQuantifiedFormEdit"
-          >
-            <div v-if="selectedConsultation">
-              <h3>患者姓名：{{ selectedConsultation.patientName }}</h3>
-              <p><strong>医生姓名：</strong>{{ selectedConsultation.doctorName }}</p>
-              <p><strong>问诊日期：</strong>{{ selectedConsultation.date }}</p>
-
-              <h4>
-                原始对话录音转写：
-                <el-button
-                  link
-                  type="primary"
-                  size="small"
-                  @click="toggleOriginalTranscript"
-                  style="margin-left: 10px;"
-                >
-                  {{ showOriginalTranscript ? '收起' : '展开' }}
-                </el-button>
-              </h4>
-              <p v-if="showOriginalTranscript" class="dialog-content">
-                {{ selectedConsultation.originalTranscript }}
-              </p>
-
-              <h4>量化表内容：
-                <el-button
-                  v-if="!isQuantifiedFormEditing"
-                  link
-                  type="primary"
-                  size="small"
-                  @click="startEditQuantifiedForm"
-                  style="margin-left: 10px;"
-                >
-                  编辑
-                </el-button>
-                <span v-else>
-                  <el-button link type="success" size="small" @click="saveQuantifiedForm">保存</el-button>
-                  <el-button link type="info" size="small" @click="cancelEditQuantifiedForm">取消</el-button>
-                </span>
-              </h4>
-              <div class="dialog-content">
-                <ul v-if="!isQuantifiedFormEditing">
-                  <li v-for="(value, key) in selectedConsultation.quantifiedForm" :key="key">
-                    <strong>{{ key }}：</strong>{{ value }}
-                  </li>
-                </ul>
-                <el-form v-else label-width="120px">
-                  <el-form-item v-for="(value, key) in editableQuantifiedForm" :key="key" :label="key + '：'">
-                    <el-input v-model="editableQuantifiedForm[key]"></el-input>
-                  </el-form-item>
-                </el-form>
-              </div>
-            </div>
-            <template #footer>
-              <span class="dialog-footer">
-                <el-button @click="dialogVisible = false">关闭</el-button>
-                <el-button type="success" @click="exportQuantifiedFormToExcel(selectedConsultation)">
-                  导出量化表 Excel
-                </el-button>
-              </span>
-            </template>
-          </el-dialog>
         </el-main>
       </el-container>
     </el-container>
+
+    <el-dialog
+      v-model="dialogVisible"
+      width="60%"
+      class="consultation-dialog"
+      @closed="resetQuantifiedFormEdit"
+    >
+      <div v-if="selectedConsultation">
+        <h3>患者姓名：{{ selectedConsultation.patientName }}</h3>
+        <p><strong>医生姓名：</strong>{{ selectedConsultation.doctorName }}</p>
+        <p><strong>问诊日期：</strong>{{ selectedConsultation.date }}</p>
+
+        <h4>量化表内容：
+          <el-button
+            v-if="!isQuantifiedFormEditing"
+            link
+            type="primary"
+            size="small"
+            @click="startEditQuantifiedForm"
+            style="margin-left: 10px;"
+          >
+            编辑
+          </el-button>
+          <span v-else>
+            <el-button link type="success" size="small" @click="saveQuantifiedForm">保存</el-button>
+            <el-button link type="info" size="small" @click="cancelEditQuantifiedForm">取消</el-button>
+          </span>
+        </h4>
+        <div class="dialog-content">
+          <ul v-if="!isQuantifiedFormEditing">
+            <li v-for="(value, key) in selectedConsultation.quantifiedForm" :key="key">
+              <strong>{{ key }}：</strong>{{ value }}
+            </li>
+          </ul>
+          <div v-else>
+            <el-form :model="editableQuantifiedForm" label-width="120px">
+              <el-form-item label="诊断">
+                <el-input v-model="editableQuantifiedForm.诊断"></el-input>
+              </el-form-item>
+              <el-form-item label="主诉">
+                <el-input type="textarea" v-model="editableQuantifiedForm.主诉"></el-input>
+              </el-form-item>
+              <el-form-item label="现病史">
+                <el-input type="textarea" v-model="editableQuantifiedForm.现病史"></el-input>
+              </el-form-item>
+              <el-form-item label="既往史">
+                <el-input type="textarea" v-model="editableQuantifiedForm.既往史"></el-input>
+              </el-form-item>
+              <el-form-item label="治疗方案">
+                <el-input type="textarea" v-model="editableQuantifiedForm.治疗方案"></el-input>
+              </el-form-item>
+              <el-form-item label="医嘱">
+                <el-input type="textarea" v-model="editableQuantifiedForm.医嘱"></el-input>
+              </el-form-item>
+              <el-form-item label="复诊建议">
+                <el-input v-model="editableQuantifiedForm.复诊建议"></el-input>
+              </el-form-item>
+            </el-form>
+          </div>
+        </div>
+
+        <h4>原始对话录音转写：
+          <el-button link type="primary" size="small" @click="toggleOriginalTranscript" style="margin-left: 10px;">
+            {{ showOriginalTranscript ? '隐藏' : '显示' }}
+          </el-button>
+        </h4>
+        <div v-if="showOriginalTranscript" class="chat-container">
+          <ul>
+            <li v-for="(message, index) in selectedConsultation.originalTranscript" :key="index"
+                :class="['chat-message', message.sender]">
+              <span class="sender-label">{{ message.sender === 'doctor' ? '医生' : '患者' }}：</span>
+              <div class="message-bubble">
+                <p>{{ message.text }}</p>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button type="success" @click="exportQuantifiedFormToExcel(selectedConsultation)">导出量化表 Excel</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
-
 <script setup>
-import { ref, computed, watchEffect, nextTick } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, watchEffect, nextTick, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Tickets, Setting } from '@element-plus/icons-vue';
 import * as XLSX from 'xlsx';
@@ -146,19 +162,14 @@ const mockConsultations = ref([
     doctorName: '李医生',
     date: '2025-07-08 10:30',
     summary: '患者张三，男性，50岁，主诉近期头痛、乏力。',
-    originalTranscript: '医生：您好，张先生，请问您哪里不舒服？患者：医生您好，我最近头有点痛，还有点乏力。医生：头痛持续多久了？伴有其他症状吗？患者：大概一周了，有时候感觉恶心，但没有呕吐。',
-    structuredData: {
-      主诉: '头痛，乏力',
-      病史: '一周前开始',
-      伴随症状: '恶心，无呕吐',
-      体征: '待检查',
-      初步诊断: '头痛待查'
-    },
-    quantifiedForm: {
-      头痛频率: '每日',
-      头痛程度评分: '中度 (5/10)',
-      乏力程度评分: '轻度 (3/10)'
-    }
+    originalTranscript: [ // 修改为数组
+      { sender: 'doctor', text: '您好，张先生，请问您哪里不舒服？' },
+      { sender: 'patient', text: '医生您好，我最近头有点痛，还有点乏力。' },
+      { sender: 'doctor', text: '头痛持续多久了？伴有其他症状吗？' },
+      { sender: 'patient', text: '大概一周了，有时候感觉恶心，但没有呕吐。' }
+    ],
+    structuredData: { /* ... */ },
+    quantifiedForm: { /* ... */ }
   },
   {
     id: '002',
@@ -166,17 +177,14 @@ const mockConsultations = ref([
     doctorName: '王医生',
     date: '2025-07-07 14:00',
     summary: '患者李四，女性，28岁，主诉咳嗽、咽痛。',
-    originalTranscript: '医生：请问您有什么不适？患者：我咳嗽两天了，喉咙也很痛。医生：有发烧吗？患者：没有发烧，就是有点流鼻涕。',
-    structuredData: {
-      主诉: '咳嗽，咽痛',
-      病史: '两天',
-      伴随症状: '流鼻涕，无发烧',
-      初步诊断: '上呼吸道感染'
-    },
-    quantifiedForm: {
-      咳嗽频率: '阵发性',
-      咽痛程度评分: '轻度 (3/10)'
-    }
+    originalTranscript: [ // 修改为数组
+      { sender: 'doctor', text: '请问您有什么不适？' },
+      { sender: 'patient', text: '我咳嗽两天了，喉咙也很痛。' },
+      { sender: 'doctor', text: '有发烧吗？' },
+      { sender: 'patient', text: '没有发烧，就是有点流鼻涕。' }
+    ],
+    structuredData: { /* ... */ },
+    quantifiedForm: { /* ... */ }
   },
   {
     id: '003',
@@ -184,17 +192,14 @@ const mockConsultations = ref([
     doctorName: '赵医生',
     date: '2025-07-06 09:15',
     summary: '患者王五，男性，65岁，主诉胸闷、气短。',
-    originalTranscript: '医生：您好，王大爷，您今天哪里不舒服？患者：我最近老是胸闷，走几步就气短。医生：这种情况持续多久了？有心慌吗？患者：大概有半个月了，偶尔会感觉心跳加快。',
-    structuredData: {
-      主诉: '胸闷，气短',
-      病史: '半个月',
-      伴随症状: '心慌',
-      初步诊断: '心脏功能待评估'
-    },
-    quantifiedForm: {
-      胸闷频率: '间歇性',
-      气短程度评分: '中度 (6/10)'
-    }
+    originalTranscript: [ // 修改为数组
+      { sender: 'doctor', text: '您好，王大爷，您今天哪里不舒服？' },
+      { sender: 'patient', text: '我最近老是胸闷，走几步就气短。' },
+      { sender: 'doctor', text: '这种情况持续多久了？有心慌吗？' },
+      { sender: 'patient', text: '大概有半个月了，偶尔会感觉心跳加快。' }
+    ],
+    structuredData: { /* ... */ },
+    quantifiedForm: { /* ... */ }
   },
   {
     id: '004',
@@ -202,17 +207,14 @@ const mockConsultations = ref([
     doctorName: '李医生',
     date: '2025-07-05 11:00',
     summary: '患者赵六，女性，35岁，主诉皮肤瘙痒。',
-    originalTranscript: '医生：您好，赵女士，请问您有什么问题？患者：医生，我全身皮肤都很痒，晚上尤其厉害。医生：有没有起疹子？患者：有的，手上和腿上有一些小红疹。',
-    structuredData: {
-      主诉: '皮肤瘙痒',
-      病史: '未知',
-      伴随症状: '全身性瘙痒，有红疹',
-      初步诊断: '皮肤过敏'
-    },
-    quantifiedForm: {
-      瘙痒程度评分: '重度 (8/10)',
-      瘙痒部位: '全身，手腿为主'
-    }
+    originalTranscript: [ // 修改为数组
+      { sender: 'doctor', text: '您好，赵女士，请问您有什么问题？' },
+      { sender: 'patient', text: '医生，我全身皮肤都很痒，晚上尤其厉害。' },
+      { sender: 'doctor', text: '有没有起疹子？' },
+      { sender: 'patient', text: '有的，手上和腿上有一些小红疹。' }
+    ],
+    structuredData: { /* ... */ },
+    quantifiedForm: { /* ... */ }
   },
   {
     id: '005',
@@ -220,21 +222,18 @@ const mockConsultations = ref([
     doctorName: '王医生',
     date: '2025-07-04 16:45',
     summary: '患者孙七，男性，42岁，主诉胃部不适、反酸。',
-    originalTranscript: '医生：孙先生，您有什么不舒服？患者：我最近胃老是胀气，还老是反酸水。医生：这种情况多久了？饭后症状会加重吗？患者：大概两周了，吃完饭会更难受。',
-    structuredData: {
-      主诉: '胃部不适，反酸',
-      病史: '两周',
-      伴随症状: '胀气',
-      初步诊断: '胃炎'
-    },
-    quantifiedForm: {
-      胃部不适程度评分: '中度 (6/10)',
-      反酸频率: '饭后频繁'
-    }
+    originalTranscript: [ // 修改为数组
+      { sender: 'doctor', text: '孙先生，您有什么不舒服？' },
+      { sender: 'patient', text: '我最近胃老是胀气，还老是反酸水。' },
+      { sender: 'doctor', text: '这种情况多久了？饭后症状会加重吗？' },
+      { sender: 'patient', text: '大概两周了，吃完饭会更难受。' }
+    ],
+    structuredData: { /* ... */ },
+    quantifiedForm: { /* ... */ }
   }
 ]);
 
-// 分页逻辑
+// // 分页逻辑
 const pageSize = 5;
 const currentPage = ref(1);
 
@@ -244,11 +243,16 @@ const consultations = computed(() => {
   return mockConsultations.value.slice(start, end);
 });
 
+onMounted(() => {
+  console.log('Consultations data:', consultations.value);
+  console.log('mockConsultations data:', mockConsultations.value); // 也打印一下原始模拟数据
+});
+
 const handlePageChange = (page) => {
   currentPage.value = page;
 };
 
-// 菜单选择
+// // 菜单选择
 const activeMenu = computed(() => route.path);
 
 const handleMenuSelect = (key) => {
@@ -265,9 +269,10 @@ watchEffect(() => {
   } else {
     displayedUsername.value = '用户';
   }
+  console.log('activeMenu (watchEffect):', activeMenu.value); // 添加这行
 });
 
-// 退出登录
+// // 退出登录
 const handleLogout = () => {
   localStorage.removeItem('token');
   localStorage.removeItem('username');
@@ -476,5 +481,61 @@ const exportQuantifiedFormToExcel = (consultation) => {
 
 .dialog-content li {
   margin-bottom: 8px;
+}
+
+/* 聊天对话框样式 */
+.chat-container {
+  background-color: #f0f0f0; /* 浅灰色背景，模拟聊天界面 */
+  padding: 10px;
+  border-radius: 5px;
+  overflow-y: auto;
+  max-height: 200px; /* 控制聊天记录区域高度 */
+}
+
+.chat-message {
+  margin-bottom: 10px;
+  display: flex; /* 使用 flex 布局 */
+  align-items: flex-start; /* 消息泡泡从顶部对齐 */
+}
+
+.chat-message.doctor {
+  justify-content: flex-start; /* 医生消息靠左 */
+}
+
+.chat-message.patient {
+  justify-content: flex-end; /* 患者消息靠右 */
+}
+
+.sender-label {
+  font-weight: bold;
+  margin-right: 8px;
+  min-width: 40px; /* 确保标签有最小宽度对齐 */
+  text-align: right; /* 让标签文字右对齐 */
+}
+
+.message-bubble {
+  padding: 8px 12px;
+  border-radius: 18px; /* 圆角消息泡泡 */
+  max-width: 70%; /* 限制消息宽度 */
+  word-wrap: break-word; /* 单词过长时换行 */
+}
+
+.chat-message.doctor .message-bubble {
+  background-color: #e0f7fa; /* 医生消息泡泡颜色 (浅蓝色) */
+  color: #263238; /* 文字颜色 */
+  margin-right: auto; /* 靠左对齐 */
+}
+
+.chat-message.patient .message-bubble {
+  background-color: #dcedc8; /* 患者消息泡泡颜色 (浅绿色) */
+  color: #212121; /* 文字颜色 */
+  margin-left: auto; /* 靠右对齐 */
+}
+
+/* 确保 ul 的 margin 和 padding 清零，避免额外的间距 */
+.chat-container ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 </style>
