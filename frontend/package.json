@@ -2,6 +2,7 @@
   "name": "ai-medical-record",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://xinliang0917.github.io/ai-medical-record_zhizhenzhushou",
   "scripts": {
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
