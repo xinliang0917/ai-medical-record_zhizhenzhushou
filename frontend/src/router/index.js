@@ -36,7 +36,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(process.env.NODE_ENV === 'production' ? '/ai-medical-record_zhizhenzhoushou/' : '/'), 
+  history: createWebHistory(process.env.NODE_ENV === 'production' ? '/ai-medical-record_zhizhenzhushou/' : '/'), 
   routes
 });
 
