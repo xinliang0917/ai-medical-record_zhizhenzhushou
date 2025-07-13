@@ -14,15 +14,18 @@
       </el-table-column>
     </el-table>
 
-    <el-pagination
-      class="pagination"
-      background
-      layout="prev, pager, next"
-      :total="mockConsultations.length"
-      :page-size="pageSize"
-      :current-page="currentPage"
-      @current-change="handlePageChange"
-    ></el-pagination>
+    <!-- 分页组件放在右下角固定位置 -->
+    <div class="pagination-container">
+      <el-pagination
+        class="pagination"
+        background
+        layout="prev, pager, next"
+        :total="mockConsultations.length"
+        :page-size="pageSize"
+        :current-page="currentPage"
+        @current-change="handlePageChange"
+      ></el-pagination>
+    </div>
 
     <el-dialog
       v-model="dialogVisible"
@@ -164,7 +167,7 @@
 import { ref, computed } from 'vue';
 // import { useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
-import * as XLSX from 'xlsx'; // 导入 XLSX 库
+import * as XLSX from 'xlsx'; // 导入 XLSX 库 
 
 // 导入 Element Plus 图标 (保持不变)
 // import { Tickets, Setting } from '@element-plus/icons-vue';
@@ -406,8 +409,15 @@ const exportQuantifiedFormToExcel = (consultation) => {
   margin-bottom: 20px;
 }
 
-.pagination {
-  text-align: right;
+.pagination-container {
+  position: fixed; /* 固定定位 */
+  bottom: 20px; /* 距离底部20px */
+  right: 20px; /* 距离右侧20px */
+  background-color: #ffffff; /* 确保背景色，避免内容被遮挡 */
+  padding: 10px 15px;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); /* 添加阴影，使其更突出 */
+  z-index: 1000; /* 确保在其他内容之上 */
 }
 
 .consultation-dialog .el-dialog__header {

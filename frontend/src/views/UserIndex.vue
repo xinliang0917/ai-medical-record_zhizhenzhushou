@@ -4,7 +4,8 @@
       <el-header class="header">
         <div class="logo">智诊助手 AI 医疗病历自动化系统</div>
         <div class="user-info">
-          <span>欢迎，{{ displayedUsername }}！</span>
+          <!-- 调整 span 和 el-button 的对齐方式 -->
+          <span class="user-welcome-text">欢迎，{{ displayedUsername }}！</span>
           <el-button type="text" @click="handleLogout">退出登录</el-button>
         </div>
       </el-header>
@@ -91,8 +92,15 @@ const handleLogout = () => {
 
 .user-info {
   display: flex;
-  align-items: center;
+  align-items: center; /* 确保内容垂直居中对齐 */
   gap: 15px;
+}
+
+.user-welcome-text {
+  /* 调整字体大小和行高，使其与 logo 对齐 */
+  font-size: 16px; /* 调整字体大小 */
+  line-height: 1; /* 确保行高与容器高度一致，避免垂直偏移 */
+  color: white; /* 确保颜色一致 */
 }
 
 .user-info .el-button {

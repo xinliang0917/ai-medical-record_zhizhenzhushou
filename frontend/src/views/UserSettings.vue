@@ -2,7 +2,8 @@
   <div class="settings-container">
     <h2 class="page-title">用户设置</h2>
 
-    <el-card class="setting-card">
+    <!-- 移除 el-card 的背景色和阴影，使其与 main-content 统一 -->
+    <el-card class="setting-card no-background">
       <template #header>
         <div class="card-header">修改个人信息</div>
       </template>
@@ -119,7 +120,8 @@ onMounted(() => {
 <style scoped>
 .settings-container {
   padding: 20px;
-  background-color: #f5f7fa;
+  /* 移除背景色，使其与 main-content 统一 */
+  background-color: transparent; 
   min-height: calc(100vh - 60px - 20px); /* 减去header和padding */
 }
 
@@ -134,6 +136,10 @@ onMounted(() => {
 .setting-card {
   max-width: 100%; /* 宽度调整为90% */
   margin-bottom: 20px;
+  /* 移除背景色和阴影，使其与 main-content 统一 */
+  background-color: transparent;
+  box-shadow: none;
+  border: none; /* 移除边框 */
 }
 
 .card-header {

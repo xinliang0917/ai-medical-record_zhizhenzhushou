@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Redirecting...</title>
+    <script type="text/javascript">
+      // 重定向到主页的逻辑
+      var path = window.location.pathname;
+      var repo = "/ai-medical-record_zhizhenzhushou/"; // <-- 替换为您的仓库名称，前后带斜杠
+      // 确保重定向到正确的 base URL，并保留哈希（如果存在）
+      if (path.startsWith(repo)) {
+        window.location.replace(repo + window.location.hash);
+      } else {
+        // Fallback for cases where repo path isn't at the start (e.g., local testing issues)
+        window.location.replace(window.location.origin + repo + window.location.hash);
+      }
+    </script>
+  </head>
+  <body>
+    如果页面没有自动跳转，请点击 <a href="/ai-medical-record_zhizhenzhushou/">这里</a>。
+  </body>
+</html>
