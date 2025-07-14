@@ -2,8 +2,8 @@
   <div class="settings-container">
     <h2 class="page-title">用户设置</h2>
 
-    <!-- 移除 el-card 的背景色和阴影，使其与 main-content 统一 -->
-    <el-card class="setting-card no-background">
+    <!-- 重新添加 el-card 组件 -->
+    <el-card class="setting-card">
       <template #header>
         <div class="card-header">修改个人信息</div>
       </template>
@@ -119,32 +119,46 @@ onMounted(() => {
 
 <style scoped>
 .settings-container {
-  padding: 20px;
-  /* 移除背景色，使其与 main-content 统一 */
+  padding-top: 0px; /* 移除 padding，让 main-content 的 padding 生效 */
   background-color: transparent; 
-  min-height: calc(100vh - 60px - 20px); /* 减去header和padding */
+  /* 移除 min-height 属性，让其自然适应父容器高度 */
+  /* min-height: calc(100vh - 60px - 20px); */ 
 }
+
 
 .page-title {
-  font-size: 24px;
-  margin-bottom: 20px;
+  font-size: 24px; /* 统一页面标题大小 */
+  font-weight: bold;
   color: #333;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 20px;
   padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
 }
 
-.setting-card {
-  max-width: 100%; /* 宽度调整为90% */
+.setting-card { /* 重新添加 el-card 的样式 */
+  max-width: 100%; 
   margin-bottom: 20px;
-  /* 移除背景色和阴影，使其与 main-content 统一 */
+  /* 恢复 el-card 默认的背景色、阴影和边框 */
+  background-color: #ffffff; /* 默认白色背景 */
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1); /* 默认阴影 */
+  border: 1px solid #ebeef5; /* 默认边框 */
+  border-radius: 4px; /* 默认圆角 */
+  padding: 20px; /* el-card 默认有 padding，这里可以根据需要调整 */
+}
+
+/* 移除 .setting-content 容器，因为 el-card 已经包裹了内容 */
+/* .setting-content { 
+  max-width: 100%; 
+  margin-bottom: 20px;
   background-color: transparent;
   box-shadow: none;
-  border: none; /* 移除边框 */
-}
+  border: none;
+} */
 
-.card-header {
+.card-header { /* 修改个人信息这个标题 */
   font-size: 18px;
   font-weight: bold;
+  padding-bottom: 10px;
 }
 
 /* 确保表单项内的输入框能占据可用宽度 */

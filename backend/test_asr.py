@@ -1,133 +1,75 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import io
-import soundfile as sf
-import numpy as np
-from pydub import AudioSegment
+# 导入 PaddleSpeech 的 ASR 执行器
+from paddlespeech.cli.asr.infer import ASRExecutor
 import os
-import tempfile
-from paddlespeech.cli.asr.infer import ASRExecutor # 导入 ASRExecutor
 
-# 初始化 Flask 应用
-app = Flask(__name__)
-# 允许所有来源的跨域请求。在生产环境中，建议限制为特定前端域名。
-CORS(app)
-
-# 初始化 PaddleSpeech ASR Executor
-# 这一步可能会在第一次运行时下载模型，请确保网络畅通
-try:
-    asr_executor = ASRExecutor()
-    print("ASRExecutor 初始化成功！")
-except Exception as e:
-    print(f"ASRExecutor 初始化失败: {e}")
-    # 根据需要，可以选择退出应用或进行其他错误处理
-
-# 定义一个简单的根路由，用于测试 Flask 服务是否启动
-@app.route('/')
-def index():
-    return "Flask API is running!"
-
-# 定义语音转文字路由
-@app.route('/transcribe-audio', methods=['POST'])
-def transcribe_audio():
-    if 'audio' not in request.files:
-        return jsonify({"error": "No audio file provided"}), 400
-
-    audio_file = request.files['audio']
-    filename = audio_file.filename
-    content_type = audio_file.content_type
-
-    print(f"收到文件: {filename}")
-    print(f"文件 MIME 类型: {content_type}")
-
+def run_simple_asr_test(audio_file_path):
+    """
+    使用 PaddleSpeech 对指定的 WAV 文件进行语音转写。
+    """
+    print(f"正在初始化 ASRExecutor...")
     try:
-        audio_data_stream = io.BytesIO(audio_file.read())
-        audio_data_stream.seek(0)
-
-        processed_audio_stream = io.BytesIO()
-
-        try:
-            # 使用 pydub 统一处理音频格式转换和重采样
-            audio_segment = AudioSegment.from_file(audio_data_stream, format=content_type.split('/')[-1])
-            audio_segment = audio_segment.set_frame_rate(16000).set_channels(1) # 统一采样率和声道
-            audio_segment.export(processed_audio_stream, format="wav") # 导出为 WAV 格式
-            processed_audio_stream.seek(0)
-
-            print(f"音频文件已成功转换为 WAV 格式。")
-
-        except Exception as e:
-            print(f"pydub 处理音频失败: {e}，尝试使用 soundfile 直接读取。")
-            try:
-                # 如果 pydub 失败，尝试直接用 soundfile 读取（处理部分简单格式）
-                audio_data_stream.seek(0)
-                data, samplerate = sf.read(audio_data_stream)
-                temp_wav_io = io.BytesIO()
-                sf.write(temp_wav_io, data, samplerate, format='WAV')
-                temp_wav_io.seek(0)
-                processed_audio_stream = temp_wav_io
-                print("soundfile 直接读取成功。")
-            except Exception as sf_e:
-                print(f"soundfile 也无法直接读取原始音频: {sf_e}")
-                return jsonify({"error": f"处理音频文件或转写失败: {sf_e}，请检查音频格式或后端日志。"}), 500
-
-        # 从处理后的流中读取数据，再次确认采样率
-        data, samplerate = sf.read(processed_audio_stream)
-
-        # 再次检查采样率，虽然 pydub 已处理，但以防万一
-        if samplerate != 16000:
-            print(f"警告：音频采样率仍不是16kHz，当前为{samplerate}Hz。PaddleSpeech可能需要16kHz。")
-            # 如果需要，这里可以添加进一步的重采样逻辑，但pydub通常已搞定
-
-        # 调用 PaddleSpeech 进行语音转写
-        # 确保 asr_executor 已成功初始化
-        if 'asr_executor' in globals() and asr_executor:
-            result = asr_executor(audio_in=data, lang='zh', sample_rate=samplerate)
-            transcribed_text = result[0]
-            return jsonify({"transcribedText": transcribed_text})
-        else:
-            return jsonify({"error": "ASR Executor 未能成功初始化，无法进行转写。"}), 500
-
+        # 初始化 ASRExecutor。
+        # 默认模型通常是 conformer_wenetspeech，支持中文。
+        asr_executor = ASRExecutor()
+        print("ASRExecutor 初始化成功！")
     except Exception as e:
-        print(f"处理音频文件或转写失败: {e}")
-        return jsonify({"error": f"处理音频文件或转写失败: {e}"}), 500
+        print(f"ASRExecutor 初始化失败: {e}")
+        print("请检查 PaddleSpeech 和其依赖是否正确安装。")
+        return
 
-# 定义生成量化表路由 (此部分需要您根据实际逻辑填充)
-@app.route('/generate-form', methods=['POST'])
-def generate_form():
-    data = request.get_json()
-    conversation_text = data.get('conversation_text', '')
+    # 检查音频文件是否存在
+    if not os.path.exists(audio_file_path):
+        print(f"错误: 音频文件 '{audio_file_path}' 不存在。")
+        print("请确保文件路径正确，并已将 WAV 文件放置到指定位置。")
+        return
 
-    if not conversation_text:
-        return jsonify({"error": "No conversation text provided"}), 400
+    print(f"正在转写文件: {audio_file_path}")
+    try:
+        # 定义解码参数，尝试调整 VAD 相关的阈值
+        # 这些参数通常在 PaddleSpeech 的配置文件或文档中可以找到更详细的说明
+        # 这里我们尝试设置一个较低的语音起始/结束阈值，以避免过早截断
+        decode_args = {
+            "decoding_method": "ctc_greedy", # 默认使用贪心解码，因为BeamSearch依赖ctcdecoders
+            # "alpha": 0.5, # BeamSearch 相关参数，暂时不启用
+            # "beta": 0.0,  # BeamSearch 相关参数，暂时不启用
+            # "lang_model_path": None, # 语言模型路径，暂时不启用
+            # "lm_weight": 0.0, # 语言模型权重，暂时不启用
+            # "max_active": 7000, # BeamSearch 相关参数，暂时不启用
+            # "min_active": 200, # BeamSearch 相关参数，暂时不启用
+            # "blank_penalty": 0.0, # BeamSearch 相关参数，暂时不启用
+            # "beam_size": 10, # BeamSearch 相关参数，暂时不启用
+            # "num_threads": 1, # 解码线程数
+            # "chunk_size": 1440, # 流式识别的块大小，当前是整体识别，暂时不启用
+            # "stride": 1440, # 流式识别的步长，当前是整体识别，暂时不启用
+            # "enable_without_timestamps": False, # 是否启用无时间戳模式
+            # "enable_timestamps": False, # 是否启用时间戳输出
+            # "cutoff_prob": 0.99, # CTC 剪枝概率
+            # "cutoff_topk": 40, # CTC 剪枝 topk
+            # "hotword_file": None, # 热词文件
+            # "hotword_weight": 1.0, # 热词权重
+            # "vad_speech_th": 0.5, # 语音活动检测的语音阈值 (0-1, 越高越严格)
+            # "vad_silence_th": 0.5, # 语音活动检测的静音阈值 (0-1, 越低越容易被识别为语音)
+            # "vad_min_speech_duration": 0.1, # 最小语音持续时间 (秒)
+            # "vad_min_silence_duration": 0.1, # 最小静音持续时间 (秒)
+            # "vad_max_speech_duration": 10.0, # 最大语音持续时间 (秒)
+        }
 
-    print(f"收到待生成量化表的文本: {conversation_text[:50]}...") # 打印前50字符
+        # 调用 asr_executor 进行语音转写
+        # lang='zh' 和 sample_rate=16000 是推荐的中文和采样率设置
+        # 尝试传递 decode_args
+        result = asr_executor(audio_file=audio_file_path, lang='zh', sample_rate=16000, decode_args=decode_args)
+        transcribed_text = result[0]
+        print(f"转写完成。结果: {transcribed_text}")
+    except Exception as e:
+        print(f"语音转写失败: {e}")
+        # 打印更详细的错误信息，帮助调试
+        import traceback
+        traceback.print_exc()
+        print("请检查音频文件格式是否为 16kHz 采样率的单声道 WAV，或查看 PaddleSpeech 内部错误。")
 
-    # 这里是生成量化表的核心逻辑
-    # 您需要根据 conversation_text 分析并生成结构化的量化表数据
-    # 这是一个示例，您需要根据您的需求实现具体的逻辑
-    generated_form_data = {
-        "基本信息": {
-            "症状": "根据对话提取的症状",
-            "性别": "根据对话提取的性别",
-            "年龄": "根据对话提取的年龄",
-            "婚姻情况": "根据对话提取的婚姻情况"
-        },
-        "疼痛评估": {
-            "持续性疼痛部位": "根据对话提取的疼痛部位",
-            "疼痛强度": "根据对话提取的疼痛强度",
-            "疼痛性质": "根据对话提取的疼痛性质",
-            "伴随症状": "根据对话提取的伴随症状"
-        },
-        "转写原文": conversation_text
-    }
-    return jsonify(generated_form_data)
+if __name__ == "__main__":
+    # 请将这里的 'ezyZip.wav' 替换为您实际的 WAV 文件路径
+    # 确保这个文件在 backend 目录下，或者提供完整路径
+    test_audio_path = "ezyZip.wav" # 替换为您的WAV文件名
 
-
-# Flask 应用的启动入口
-if __name__ == '__main__':
-    # 确保 PaddleSpeech 模型下载和初始化完成后才启动 Flask
-    # 如果 asr_executor 初始化失败，这里可以决定是否继续运行 Flask
-    if 'asr_executor' in globals() and asr_executor:
-        app.run(debug=True, port=5000)
-    else:
-        print("由于 ASRExecutor 初始化失败，Flask 应用未启动。")
+    run_simple_asr_test(test_audio_path)

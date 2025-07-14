@@ -413,7 +413,6 @@ const exportQuantifiedFormToExcel = (consultation) => {
   position: fixed; /* 固定定位 */
   bottom: 20px; /* 距离底部20px */
   right: 20px; /* 距离右侧20px */
-  background-color: #ffffff; /* 确保背景色，避免内容被遮挡 */
   padding: 10px 15px;
   border-radius: 8px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1); /* 添加阴影，使其更突出 */

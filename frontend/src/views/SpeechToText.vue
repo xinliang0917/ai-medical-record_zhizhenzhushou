@@ -1,11 +1,9 @@
 <template>
-  <!-- 移除 el-card 的背景色，使其与 main-content 统一 -->
-  <el-card class="speech-to-text-card no-background">
-    <template #header>
-      <div class="card-header">
-        <span>语音转文字</span>
-      </div>
-    </template>
+  <!-- 移除 el-card 组件，直接使用 div 作为根容器 -->
+  <h2 class="page-title">语音转文字</h2>
+  <div class="speech-to-text-content">
+    <div class="card-header"> <!-- 保持 card-header，作为页面标题样式 -->
+    </div>
     <div class="recorder-controls">
       <el-button
         type="primary"
@@ -97,7 +95,7 @@
         <el-button type="primary" @click="quantifiedFormDialogVisible = false">关闭</el-button>
       </template>
     </el-dialog>
-  </el-card>
+  </div>
 </template>
 
 <script setup>
@@ -311,14 +309,18 @@ const generateForm = async () => {
 </script>
 
 <style scoped>
-.speech-to-text-card {
-  max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
-  /* 移除背景色和阴影，使其与 main-content 统一 */
-  background-color: transparent; 
-  box-shadow: none;
-  border: none; /* 移除边框 */
+.page-title {
+  color: #333;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.speech-to-text-content {
+  /* 确保内容区域有与 main-content 相同的内边距，或根据需要调整 */
+  padding: 0px; /* main-content 已经有20px padding，这里可以设为0或根据需要调整 */
+  max-width: 100%; /* 确保占满父容器宽度 */
+  margin: 0 auto; /* 居中内容 */
 }
 
 .card-header {
@@ -327,6 +329,8 @@ const generateForm = async () => {
   align-items: center;
   font-size: 18px;
   font-weight: bold;
+  padding-bottom: 15px;
+  margin-bottom: 20px; /* 增加与下方内容的间距 */
 }
 
 .recorder-controls {
